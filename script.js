@@ -3,6 +3,9 @@ const buttons = document.querySelectorAll("button");
 const clearButton = document.querySelector("#clearButton");
 const equalButton = document.querySelector("#equal");
 const pointButton = document.querySelector("#point");
+const parenthesisButton = document.querySelector("#parenthesis");
+
+
 
 buttons.forEach(button => button.addEventListener("click", function (e) {
     //Prevents adding more than one operator
@@ -18,6 +21,22 @@ buttons.forEach(button => button.addEventListener("click", function (e) {
         return;
     }
     ////
+    //Prevents adding operators when display is empty
+    if ((this.value == "+" ||
+        this.value == "-" ||
+        this.value == "*" ||
+        this.value == "/") && display.value == "") {
+        return;
+    }
+    //
+    //If last character is a point and an operator was clicked, delete it
+    if ((this.value == "+" ||
+        this.value == "-" ||
+        this.value == "*" ||
+        this.value == "/") &&
+        (display.value[display.value.length - 1] == ".")) {
+        display.value = display.value.slice(0, display.value.length - 1);
+    }
     display.value += this.value;
     return;
 }));
@@ -26,143 +45,278 @@ clearButton.addEventListener("click", function (e) {
     display.value = "";
     return;
 });
-/* equalButton.addEventListener("click", function () {
-    for (i = 0; "1234567890.".indexOf(display.value[i]) != -1; i++) { }
-    var number2 = "";
-    const number1 = parseFloat(display.value.slice(0, i));
-    const operator = display.value[i];
-    number2 = parseFloat(display.value.slice(i + 1));
-    if (!number2 && operator) {
-        alert("You need to add a second number!");
-    }
-    if (number1[number1.length - 1] == "." || number2[number2.length - 1] == ".") {
-        return;
-    }
-    display.value = operate(operator, number1, number2);
-    return;
-}); */
+
 
 equalButton.addEventListener("click", function () {
+    if (display.value[display.value.length - 1] == "+" ||
+        display.value[display.value.length - 1] == "-" ||
+        display.value[display.value.length - 1] == "*" ||
+        display.value[display.value.length - 1] == "/") {
+        alert("That's not a valid expression!");
+        return;
+    }
     display.value = evaluate(display.value);
     return;
 });
 
 pointButton.addEventListener("click", function () {
-    for (i = 0; "1234567890.".indexOf(display.value[i]) != -1; i++) {
-    }
-    var number2 = "";
-    const number1 = parseFloat(display.value.slice(0, i));
-    const operator = display.value[i];
-    const number2str = display.value.slice(i + 1);
-    number2 = parseFloat(number2str)
-    if (display.value.indexOf(".") == -1) {
-        display.value += ".";
+    if (!display.value) {
+        display.value += "0.";
         return;
     }
-    if (operator && number2str.indexOf(".") == -1) {
-        display.value += ".";
+    //Check if last number has a point already
+    for (i = 0; "1234567890.".indexOf(display.value[display.value.length - 1 - i]) != -1; i++) {
+    }
+    var lastNumber = display.value.slice(display.value.length - i, display.value.length);
+    if (lastNumber.indexOf(".") != -1) {
         return;
     }
+    //----------------
+    if ("+-*/".indexOf(display.value[display.value.length - 1]) != -1) {
+        display.value += "0.";
+        return;
+    }
+    display.value += ".";
     return;
 });
 
+parenthesisButton.addEventListener('click', function () {
+    var openParenthesis = 0;
+    for (i = 0; i < display.value.length; i++) {
+        if (display.value[i] == "(") { openParenthesis++; }
+        if (display.value[i] == ")") { openParenthesis--; }
+    }
+    if (display.value[display.value.length - 1] == "+" ||
+        display.value[display.value.length - 1] == "-" ||
+        display.value[display.value.length - 1] == "*" ||
+        display.value[display.value.length - 1] == "/") {
+        display.value += "(";
+        openParenthesis++;
+        return;
+    }
+    if ("1234567890)".indexOf(display.value[display.value.length - 1]) != -1) {
+        if (openParenthesis > 0) {
+            display.value += ")";
+            openParenthesis--;
+            return;
+        }
+        if (openParenthesis == 0) {
+            display.value += "*(";
+            return;
+        }
+    }
+});
 
-//recursive function that evaluates a expression by separating it into
-// operator and 2 other expressions, which in the base case are just numbers.
 function evaluate(expression) {
-    for (i = 0; "1234567890.".indexOf(expression[i]) != -1; i++) {
+    // first remove useless parenthesis
+    expression = removeUselessParenthesis(expression);
+    // see if the expression is a number
+    if (expression == parseFloat(expression)) {
+        return expression;
     }
-    var expression2 = "";
-    var expression1 = expression.slice(0, i);
-    var operator = expression[i];
-    expression2 = expression.slice(i + 1);
-    if (expression[expression.length - 1] == "+" ||
-        expression[expression.length - 1] == "-" ||
-        expression[expression.length - 1] == "*" ||
-        expression[expression.length - 1] == "/" ) {
-        alert("You need to add a second number!");
+    // see if the expression has sums
+    if (noSums(expression)) {
+        // If it doesn't have sums, then it's a product
+        //get the multiplicating factors first
+        var factors = multiplicatingFactors(expression);
+        var result = product(factors);
+        // then get the dividing factors
+        factors = dividingFactors(expression);
+        var result = result / (product(factors));
+        return result;
     }
+    // if it has sums, sum...
+    var addends = addendsOf(expression);
+    var result = sum(addends);
+    // if it has substractions, substract...
+    var subtrahends = subtrahendsOf(expression);
+    var result = result - (sum(subtrahends));
 
-    // Priority for multiplication and division
-    if (operator == "*" || operator == "/") {
-        // takes the first number from the second expression to evaluate the product 
-        for (i = 0; "1234567890.".indexOf(expression2[i]) != -1; i++) {
+    return result;
+
+}
+
+function multiplicatingFactors(expression) {
+    var factors = [];
+    var j = 0;
+    var inParenthesis = 0;
+    for (i = 0; i <= expression.length; i++) {
+        if (expression[i] == "(") {
+            inParenthesis++;
+            continue
         }
-        // evaluate product
-        expression1 = operate(operator,expression1,expression2.slice(0, i));
-        operator = expression2[i];
-        expression2 = expression2.slice(i + 1);
-        // if the expression ended here, break
-        if (!expression2) {
-            return expression1;
+        if (expression[i] == ")") {
+            inParenthesis--;
+            continue;
         }
-        // since we changed expression1 and expression2, we want to evaluate again
-        // and check if the next operation is a product
-        return (evaluate(expression1 + operator + expression2));
+        if ((expression[i] == "*" || expression[i] == "/" || !expression[i]) && inParenthesis == 0) {
+            if (j == 0) {
+                var factor = expression.slice(0, i);
+            } else {
+                var factor = expression.slice(j + 1, i);
+            }
+            if (expression[j] == "*" || j==0) {
+                factors.push((factor));
+            }
+            j = i;
+        }
     }
-    // This part of the function is only for sum and substraction
-    // expression1 is always a number
-    // check if expression2 is a number, if it has any operators, then evaluate it as a new expression
-    if (expression2.indexOf("+") != -1 ||
-        expression2.indexOf("*") != -1 ||
-        expression2.indexOf("-") != -1 ||
-        expression2.indexOf("/") != -1) {
-        expression2 = evaluate(expression2);
+    return factors;
+}
+function dividingFactors(expression) {
+    var factors = [];
+    var j = 0;
+    var inParenthesis = 0;
+    for (i = 0; i <= expression.length; i++) {
+        if (expression[i] == "(") {
+            inParenthesis++;
+            continue
+        }
+        if (expression[i] == ")") {
+            inParenthesis--;
+            continue;
+        }
+        if ((expression[i] == "/" || expression[i] == "*" || !expression[i]) && inParenthesis == 0) {
+            if (expression[j] == "/") {
+                var factor = expression.slice(j + 1, i);
+                factors.push((factor));
+            }
+            j = i;
+        }
     }
-    return (operate(operator, parseFloat(expression1), parseFloat(expression2)));
-
+    return factors;
 }
-
-function add(x, y) {
-    return x + y;
+function addendsOf(expression) {
+    var addends = [];
+    var j = 0;
+    var inParenthesis = 0;
+    for (i = 0; i <= expression.length; i++) {
+        if (expression[i] == "(") {
+            inParenthesis++;
+            continue
+        }
+        if (expression[i] == ")") {
+            inParenthesis--;
+            continue;
+        }
+        if ((expression[i] == "+" || expression[i] == "-" || !expression[i]) && inParenthesis == 0) {
+            if (j == 0) {
+                var addend = expression.slice(0, i);
+            } else {
+                var addend = expression.slice(j + 1, i);
+            }
+            if (expression[j] == "+" || j==0) {
+                addends.push((addend));
+            }
+            j = i;
+        }
+    }
+    return addends;
 }
-
-function substract(x, y) {
-    return x - y;
+function subtrahendsOf(expression) {
+    var subtrahends = [];
+    var j = 0;
+    var inParenthesis = 0;
+    for (i = 0; i <= expression.length; i++) {
+        if (expression[i] == "(") {
+            inParenthesis++;
+            continue
+        }
+        if (expression[i] == ")") {
+            inParenthesis--;
+            continue;
+        }
+        if ((expression[i] == "+" || expression[i] == "-" || !expression[i]) && inParenthesis == 0) {
+            if (expression[j] == "-") {
+                var subtrahend = expression.slice(j + 1, i);
+                subtrahends.push((subtrahend));
+            }
+            j = i;
+        }
+    }
+    return subtrahends;
 }
-
-function multiply(x, y) {
-    return x * y;
+function noSums(expression) {
+    if (firstAddend(expression) == expression) {
+        return true;
+    }
+    return false;
 }
-
-function divide(x, y) {
-    return x / y;
+function firstAddend(expression) {
+    var inParenthesis = 0;
+    var addend = "";
+    for (i = 0; i < expression.length - 1; i++) {
+        if (expression[i] == "(") {
+            inParenthesis++;
+            continue
+        }
+        if (expression[i] == ")") {
+            inParenthesis--;
+            continue;
+        }
+        if ((expression[i] == "+" || (expression[i] == "-" && i != 0)) && inParenthesis == 0) {
+            addend = expression.slice(0, i)
+            return addend;
+        }
+    }
+    addend = expression;
+    return addend;
 }
-
+function removeUselessParenthesis(expression) {
+    if (expression.startsWith("(")) {
+        var inParenthesis = 1;
+        for (i = 1; i < expression.length; i++) {
+            if (expression[i] == "(") {
+                inParenthesis++;
+            }
+            if (expression[i] == ")") {
+                inParenthesis--;
+            }
+            if (inParenthesis == 0 && i < expression.length - 1) {
+                break;
+            }
+            if (inParenthesis == 0 && i == expression.length - 1) {
+                return expression.slice(1, expression.length - 1)
+            }
+        }
+        return expression;
+    }
+    return expression;
+}
+// BASIC OPERATIONS
+function add(x, y) { return parseFloat(x) + parseFloat(y); }
+function substract(x, y) { return parseFloat(x) - parseFloat(y); }
+function multiply(x, y) { return parseFloat(x) * parseFloat(y); }
+function divide(x, y) { return parseFloat(x) / parseFloat(y); }
 function operate(operator, x, y) {
-    if (x && !operator) {
-        return x;
-    }
+    if (x && !operator) { return x; }
     if (operator && !y) {
+        if (operator == ")") {
+            return x;
+        }
         return x + operator;
     }
-    if (operator == "+") {
-        return add(x, y);
-    } if (operator == "-") {
-        return substract(x, y);
-    } if (operator == "*") {
-        return multiply(x, y);
-    } if (operator == "/") {
-        return divide(x, y);
-    }
+    if (operator == "+") { return add(x, y); }
+    if (operator == "-") { return substract(x, y); }
+    if (operator == "*") { return multiply(x, y); }
+    if (operator == "/") { return divide(x, y); }
 }
-
 function sum(array) {
     var sum = 0;
     for (let x of array) {
+        x = evaluate(x);
         sum = add(sum, x);
     }
     return sum;
 }
-
 function product(array) {
     var product = 1;
     for (let x of array) {
+        x = evaluate(x);
         product = product * x;
     }
     return product;
 }
-
 function power(x, y) {
     return x ** y;
 }
