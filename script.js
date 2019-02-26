@@ -5,6 +5,7 @@ const equalButton = document.querySelector("#equal");
 const pointButton = document.querySelector("#point");
 const parenthesisButton = document.querySelector("#parenthesis");
 const minusplusButton = document.querySelector('#minusplus');
+const delButton = document.querySelector('#del');
 
 
 buttons.forEach(button => button.addEventListener("click", function (e) {
@@ -66,6 +67,9 @@ minusplusButton.addEventListener("click", function () {
             return;
         }
     }
+})
+delButton.addEventListener("click", function () {
+    display.value = display.value.slice(0,display.value.length-1);
 })
 
 equalButton.addEventListener("click", function () {
@@ -156,27 +160,6 @@ function Node(data) {
 function Tree(data) {
     var node = new Node(data);
     this._root = node;
-}
-function removeUselessParenthesis(expression) {
-    if (expression.startsWith("(")) {
-        var inParenthesis = 1;
-        for (i = 1; i < expression.length; i++) {
-            if (expression[i] == "(") {
-                inParenthesis++;
-            }
-            if (expression[i] == ")") {
-                inParenthesis--;
-            }
-            if (inParenthesis == 0 && i < expression.length - 1) {
-                break;
-            }
-            if (inParenthesis == 0 && i == expression.length - 1) {
-                return expression.slice(1, expression.length - 1)
-            }
-        }
-        return expression;
-    }
-    return expression;
 }
 function isSum(expression) {
     var inParenthesis = 0;
