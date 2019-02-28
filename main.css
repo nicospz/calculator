@@ -46,8 +46,10 @@ header {
 }
 
 #calculator header input {
-    width: 99%;
-    height: 90%;
+    max-width: 99%;
+    min-width: 80%;
+    max-height: 90%;
+    min-height: 75%;
     border-style: solid;
     border-radius: 4% / 25%;
     border-width: 2px;
