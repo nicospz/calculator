@@ -236,7 +236,7 @@ window.addEventListener("keydown", function (e) {
     if (e.key == "/") {
         simulateClick(divisionButton);
     }
-    if (e.key == "*") {
+    if (e.key == "*" || e.keyCode == 88) {
         simulateClick(multButton);
     }
     if (e.key == "+") {

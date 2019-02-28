@@ -3,14 +3,13 @@ body {
     margin: auto;
     display: flex;
     width: 100%;
+    background-color: #EAEBEC;
 }
+
 /* Remove rectangle when focusing on a button */
 
-body:not(.user-is-tabbing) button:focus,
-body:not(.user-is-tabbing) input:focus,
-body:not(.user-is-tabbing) select:focus,
-body:not(.user-is-tabbing) textarea:focus {
-  outline: none;
+body:not(.user-is-tabbing) button:focus, body:not(.user-is-tabbing) input:focus, body:not(.user-is-tabbing) select:focus, body:not(.user-is-tabbing) textarea:focus {
+    outline: none;
 }
 
 .center {
@@ -20,6 +19,7 @@ body:not(.user-is-tabbing) textarea:focus {
 }
 
 #calculator {
+    background-color: rgba(92, 121, 151, 0.726);
     grid-column: 2 / 3;
     margin-top: 40px;
     display: grid;
@@ -29,6 +29,10 @@ body:not(.user-is-tabbing) textarea:focus {
     justify-items: center;
     width: 400px;
     height: auto;
+    border: 1px solid rgb(78, 102, 128);
+    border-radius: 20px;
+    padding: 20px 20px;
+    box-shadow: 0 8px 50px -5px black;
 }
 
 #del {
