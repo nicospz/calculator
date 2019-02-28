@@ -5,8 +5,17 @@ const equalButton = document.querySelector("#equal");
 const pointButton = document.querySelector("#point");
 const parenthesisButton = document.querySelector("#parenthesis");
 const minusplusButton = document.querySelector('#minusplus');
+const divisionButton = document.querySelector('#division');
+const plusButton = document.querySelector('#plus');
+const minusButton = document.querySelector('#minus');
+const multButton = document.querySelector('#mult');
 const delButton = document.querySelector('#del');
-
+const percentageButton = document.querySelector('#percentage');
+const numberButtons = [];
+for (i = 0; i < 10; i++) {
+    const numberButton = document.querySelector('#button' + i);
+    numberButtons.push(numberButton)
+}
 
 buttons.forEach(button => button.addEventListener("click", function (e) {
     //Prevents adding more than one operator
@@ -38,7 +47,37 @@ buttons.forEach(button => button.addEventListener("click", function (e) {
         (display.value[display.value.length - 1] == ".")) {
         display.value = display.value.slice(0, display.value.length - 1);
     }
+    //If last character is a percentage symbol, add a multiplication in-between
+    if (display.value[display.value.length - 1] == "%" && this.value == parseFloat(this.value)) {
+        display.value += "*" + this.value;
+        return;
+    }
+    //--------------
+    //Add commas every 3 digits
     display.value += this.value;
+    var i = display.value.length;
+    if (this.value == parseFloat(this.value)) {
+        while (i >= -1) {
+            if (display.value[i] == "+" ||
+                display.value[i] == "-" ||
+                display.value[i] == "*" ||
+                display.value[i] == "(" ||
+                display.value[i] == "/" ||
+                i == -1) {
+                var lastNumber = display.value.slice(i + 1);
+                break;
+            }
+            if (display.value[i] == "."){
+                return;
+            }
+            i--;
+        }
+        lastNumber = removeCommas(lastNumber);
+        display.value = display.value.slice(0, i + 1)
+        lastNumber = insertCommas(lastNumber);
+        display.value += lastNumber;
+        return;
+    };
     return;
 }));
 
@@ -69,10 +108,39 @@ minusplusButton.addEventListener("click", function () {
     }
 })
 delButton.addEventListener("click", function () {
-    display.value = display.value.slice(0,display.value.length-1);
+    display.value = display.value.slice(0, display.value.length - 1);
 })
-
+percentageButton.addEventListener("click", function () {
+    var expression = display.value
+    var lastNumber;
+    //No double percentages
+    if (expression[expression.length - 1] == "%") {
+        return;
+    }
+    //
+    if (expression == parseFloat(expression)) {
+        display.value = expression + "%";
+    }
+    for (i = expression.length - 2; i >= 0; i--) {
+        if (expression[i] == "+" ||
+            expression[i] == "-" ||
+            expression[i] == "*" ||
+            expression[i] == "/" ||
+            expression[i] == "(") {
+            /* if (expression[i - 1] == "(") {
+                display.value = expression.slice(0, i - 1) + expression.slice(i + 1);
+                return;
+            } */
+            lastNumber = expression.slice(i + 1);
+            if (lastNumber == parseFloat(lastNumber)) {
+                display.value = expression.slice(0, i + 1) + lastNumber + "%";
+                return;
+            }
+        }
+    }
+});
 equalButton.addEventListener("click", function () {
+    var expression = removeCommas(display.value);
     if (display.value[display.value.length - 1] == "+" ||
         display.value[display.value.length - 1] == "-" ||
         display.value[display.value.length - 1] == "*" ||
@@ -81,7 +149,6 @@ equalButton.addEventListener("click", function () {
         return;
     }
     //Complete parenthesis
-    var expression = display.value;
     var parenthesis = 0;
     for (i = 0; i < expression.length; i++) {
         if (expression[i] == "(") {
@@ -94,13 +161,14 @@ equalButton.addEventListener("click", function () {
         }
     }
     for (i = 0; i < parenthesis; i++) {
-        display.value += ")";
+        expression += ")";
     }
     //-----------------------------
-    display.value = evaluate(display.value);
+    expression = evaluate(expression);
+    expression = insertCommas(expression.toString())
+    display.value = expression;
     return;
 });
-
 pointButton.addEventListener("click", function () {
     if (!display.value) {
         display.value += "0.";
@@ -121,8 +189,10 @@ pointButton.addEventListener("click", function () {
     display.value += ".";
     return;
 });
-
 parenthesisButton.addEventListener('click', function () {
+    if (!display.value || display.value[display.value.length - 1] == "(") {
+        display.value += "(";
+    }
     var openParenthesis = 0;
     for (i = 0; i < display.value.length; i++) {
         if (display.value[i] == "(") { openParenthesis++; }
@@ -148,7 +218,63 @@ parenthesisButton.addEventListener('click', function () {
         }
     }
 });
+
+//Keyboard actions
+window.addEventListener("keydown", function (e) {
+    if (e.key == "%") {
+        simulateClick(percentageButton);
+    }
+    if (e.key == parseFloat(e.key)) {
+        simulateClick(numberButtons[e.key])
+    }
+    if (e.keyCode == 13) {
+        simulateClick(equalButton);
+    }
+    if (e.key == "=") {
+        simulateClick(equalButton);
+    }
+    if (e.key == "/") {
+        simulateClick(divisionButton);
+    }
+    if (e.key == "*") {
+        simulateClick(multButton);
+    }
+    if (e.key == "+") {
+        simulateClick(plusButton);
+    }
+    if (e.key == "-") {
+        simulateClick(minusButton);
+    }
+    if (e.key == ".") {
+        simulateClick(pointButton);
+    }
+    if (e.key == "(" || e.key == ")") {
+        simulateClick(parenthesisButton);
+    }
+    if (e.keyCode == 8) {
+        simulateClick(delButton);
+    }
+    if (e.keyCode == 67) {
+        simulateClick(clearButton);
+    }
+})
+/**
+ * Simulate a click event.
+ * @public
+ * @param {Element} elem  the element to simulate a click on
+ */
+var simulateClick = function (elem) {
+    // Create our event (with options)
+    var evt = new MouseEvent('click', {
+        bubbles: true,
+        cancelable: true,
+        view: window
+    });
+    // If cancelled, don't dispatch our event
+    var canceled = !elem.dispatchEvent(evt);
+};
 function evaluate(expression) {
+    expression = percentagesToDivision(expression);
     var tree = expressionTree(expression);
     return evaluateNode(tree._root);
 }
@@ -163,7 +289,7 @@ function Tree(data) {
 }
 function isSum(expression) {
     var inParenthesis = 0;
-    for (i = expression.length - 1; i >= 0; i--) {
+    for (i = expression.length - 1; i > 0; i--) {
         if (expression[i] == ")") {
             inParenthesis++;
             continue;
@@ -179,20 +305,21 @@ function isSum(expression) {
     return false;
 }
 function expressionTree(expression) {
-    expression = removeUselessParenthesis(expression);
+    while (expression != removeUselessParenthesis(expression)) {
+        expression = removeUselessParenthesis(expression);
+    }
     if (expression == parseFloat(expression)) {
         return new Tree(expression);
     }
     if (isSum(expression)) {
         return summationTree(expression)
-
     }
     return multiplicationTree(expression)
 }
 function summationTree(expression) {
     var inParenthesis = 0;
     //Parse from right to left
-    for (let i = (expression.length - 1); i >= 0; i--) {
+    for (let i = (expression.length - 1); i > 0; i--) {
         if (expression[i] == ")") {
             inParenthesis++;
             continue;
@@ -276,6 +403,69 @@ function removeUselessParenthesis(expression) {
     }
     return expression;
 }
+function percentagesToDivision(expression) {
+    for (i = 0; i < expression.length; i++) {
+        if (expression[i] == "%") {
+            expression = expression.slice(0, i) + "/100" + expression.slice(i + 1);
+        }
+    }
+    return expression;
+}
+function insertCommas(expression) {
+    if(hasPoint(expression)){
+        var point = 1;
+        var k = expression.length;
+        while (point == 1){
+            if (expression[k] == "."){
+                point == 0;
+                break;
+            }
+            k--;
+        }
+        for (i = 2; i < k; i++) {
+            var j = k - i - 1;
+            if (i % 4 == 3) {
+                expression = expression.slice(0, j + 1) + "," + expression.slice(j + 1);
+            }
+        }
+        return expression;
+    }
+
+
+    for (i = 2; i < expression.length; i++) {
+        var j = expression.length - i - 1;
+        if (i % 4 == 3) {
+            expression = expression.slice(0, j + 1) + "," + expression.slice(j + 1);
+        }
+    }
+
+    return expression;
+}
+function hasPoint(expression){
+    if(expression !== parseInt(expression).toString()){
+        return true;
+    }
+    return false;
+}
+function removeCommas(expression) {
+    for (i = 0; i < expression.length; i++) {
+        if (expression[i] == ",") {
+            expression = expression.slice(0, i) + expression.slice(i + 1);
+        }
+    }
+    return expression;
+}
+function lastNumber(expression) {
+    for (i = expression.length - 1; i >= 0; i--) {
+        if (expression[i] == "+" ||
+            expression[i] == "-" ||
+            expression[i] == "*" ||
+            expression[i] == "(" ||
+            expression[i] == "/") {
+            lastNumber = expression.slice(i + 1);
+        }
+    }
+}
 // BASIC OPERATIONS
 function add(x, y) { return parseFloat(x) + parseFloat(y); }
 function substract(x, y) { return parseFloat(x) - parseFloat(y); }
@@ -297,3 +487,13 @@ function operate(operator, x, y) {
 function power(x, y) {
     return x ** y;
 }
+
+// Remove rectangle when focusing a button
+function handleFirstTab(e) {
+    if (e.keyCode === 9) { // the "I am a keyboard user" key
+        document.body.classList.add('user-is-tabbing');
+        window.removeEventListener('keydown', handleFirstTab);
+    }
+}
+window.addEventListener('keydown', handleFirstTab);
+// ----------------------

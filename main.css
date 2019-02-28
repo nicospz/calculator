@@ -4,6 +4,14 @@ body {
     display: flex;
     width: 100%;
 }
+/* Remove rectangle when focusing on a button */
+
+body:not(.user-is-tabbing) button:focus,
+body:not(.user-is-tabbing) input:focus,
+body:not(.user-is-tabbing) select:focus,
+body:not(.user-is-tabbing) textarea:focus {
+  outline: none;
+}
 
 .center {
     width: 100%;
@@ -13,7 +21,7 @@ body {
 
 #calculator {
     grid-column: 2 / 3;
-    margin-top: 100px;
+    margin-top: 40px;
     display: grid;
     grid-template-rows: 1fr 1fr 1fr 1fr 1fr 1fr 1fr;
     grid-template-columns: 1fr 1fr 1fr 1fr;
