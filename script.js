@@ -39,6 +39,14 @@ buttons.forEach(button => button.addEventListener("click", function (e) {
         return;
     }
     //
+    //Prevents adding operators when last character is an opening parenthesis
+    if ((this.value == "+" ||
+        this.value == "-" ||
+        this.value == "*" ||
+        this.value == "/") && display.value[display.value.length-1] == "(") {
+        return;
+    }
+    //
     //If last character is a point and an operator was clicked, delete it
     if ((this.value == "+" ||
         this.value == "-" ||
@@ -49,6 +57,12 @@ buttons.forEach(button => button.addEventListener("click", function (e) {
     }
     //If last character is a percentage symbol, add a multiplication in-between
     if (display.value[display.value.length - 1] == "%" && this.value == parseFloat(this.value)) {
+        display.value += "*" + this.value;
+        return;
+    }
+    //--------------
+    //If last character is a closing parenthesis, add a multiplication in-between
+    if (display.value[display.value.length - 1] == ")" && this.value == parseFloat(this.value)) {
         display.value += "*" + this.value;
         return;
     }
@@ -174,6 +188,10 @@ pointButton.addEventListener("click", function () {
         display.value += "0.";
         return;
     }
+    if (display.value[display.value.length-1] == ")") {
+        display.value += "*0.";
+        return;
+    }
     //Check if last number has a point already
     for (i = 0; "1234567890.".indexOf(display.value[display.value.length - 1 - i]) != -1; i++) {
     }
@@ -182,7 +200,7 @@ pointButton.addEventListener("click", function () {
         return;
     }
     //----------------
-    if ("+-*/".indexOf(display.value[display.value.length - 1]) != -1) {
+    if ("+-*/(".indexOf(display.value[display.value.length - 1]) != -1) {
         display.value += "0.";
         return;
     }
